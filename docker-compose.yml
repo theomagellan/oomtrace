@@ -1,0 +1,43 @@
+name: "oomtrace-test"
+
+services:
+  oomtrace:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM golang:1.25 AS builder
+        WORKDIR /src
+        COPY go.mod go.sum ./
+        RUN go mod download
+        COPY . .
+        RUN go build -o /oomtrace ./cmd/oomtrace
+
+        FROM ubuntu:22.04
+        COPY --from=builder /oomtrace /oomtrace
+        ENTRYPOINT ["/oomtrace"]
+    privileged: true
+    pid: "host"
+    volumes:
+      - /sys/kernel/btf:/sys/kernel/btf:ro
+      - /sys/kernel/tracing:/sys/kernel/tracing:rw
+      - /sys/fs/bpf:/sys/fs/bpf:rw
+      - /proc:/proc:ro
+      - .:/output
+    environment:
+      - OOMTRACE_ENDPOINT=file:///output/oom.json
+
+  victim:
+    image: python:3.11-slim
+    mem_limit: 256m
+    memswap_limit: 256m
+    volumes:
+      - ./test/victim-lib/victim_lib.c:/build/victim_lib.c:ro
+      - ./test/victim_cross.py:/victim_cross.py:ro
+    command: >
+      sh -c "apt-get update -qq &&
+             apt-get install -y -qq --no-install-recommends gcc libc6-dev &&
+             gcc -shared -fPIC -o /libvictim_c.so /build/victim_lib.c &&
+             echo 'running victim' &&
+             python3 /victim_cross.py"
+    depends_on:
+      - oomtrace
