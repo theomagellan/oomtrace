@@ -240,19 +240,40 @@ func frameTypeLanguage(ft libpf.FrameType) string {
 	}
 }
 
-// fingerprint returns a short hex hash of the top userspace frame function names
-// for deduplication. Returns "" for empty stacks.
+// fingerprint returns a short hex hash over the first 5 non-kernel frames that
+// carry identifying information, for deduplication. Kernel frames are excluded
+// because they are identical across all OOM kills for the same interrupt path.
+// For frames without a resolved symbol, (buildID, relativeAddress) is used as
+// a stable fallback so that native-only stacks still produce meaningful hashes.
+// Returns "" when no informative frames are found.
 func fingerprint(frames libpf.Frames) string {
-	if len(frames) == 0 {
-		return ""
-	}
-	limit := 5
-	if len(frames) < limit {
-		limit = len(frames)
-	}
 	h := sha256.New()
-	for _, fh := range frames[:limit] {
-		fmt.Fprintf(h, "%s\n", fh.Value().FunctionName.String())
+	n := 0
+	for _, fh := range frames {
+		if n >= 5 {
+			break
+		}
+		f := fh.Value()
+		if f.Type == libpf.KernelFrame {
+			continue
+		}
+		if name := f.FunctionName.String(); name != "" {
+			fmt.Fprintf(h, "fn:%s\n", name)
+			n++
+		} else if f.Mapping.Valid() {
+			file := f.Mapping.Value().File.Value()
+			bid := file.GnuBuildID
+			if bid == "" {
+				bid = file.GoBuildID
+			}
+			if bid != "" && f.AddressOrLineno > 0 {
+				fmt.Fprintf(h, "elf:%s:0x%x\n", bid, f.AddressOrLineno)
+				n++
+			}
+		}
+	}
+	if n == 0 {
+		return ""
 	}
 	return fmt.Sprintf("%x", h.Sum(nil))[:16]
 }
