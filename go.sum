@@ -1,5 +1,5 @@
-github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260616160903-2a2d0dfc21ac h1:lRZ5CX5lqBpJQujUC5tCJVbwcyTS6i6QZIteysaM+8U=
-github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260616160903-2a2d0dfc21ac/go.mod h1:DqHEtu1S8fTmyvvrSSum1lssLKwYM7aExPNZ/+vWZ6U=
+github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260617113627-dc23d3703897 h1:d7Nmwrzg3hK86Nemsa4wsnTezrRVHLWMjjyGoDNuMoI=
+github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260617113627-dc23d3703897/go.mod h1:DqHEtu1S8fTmyvvrSSum1lssLKwYM7aExPNZ/+vWZ6U=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cilium/ebpf v0.21.0 h1:4dpx1J/B/1apeTmWBH5BkVLayHTkFrMovVPnHEk+l3k=

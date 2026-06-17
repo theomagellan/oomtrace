@@ -44,4 +44,4 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
-replace go.opentelemetry.io/ebpf-profiler => github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260616160903-2a2d0dfc21ac
+replace go.opentelemetry.io/ebpf-profiler => github.com/DataDog/opentelemetry-ebpf-profiler v0.0.0-20260617113627-dc23d3703897
