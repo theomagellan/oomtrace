@@ -72,12 +72,11 @@ func Build(trace *libpf.Trace, meta *samples.TraceEventMeta, sys OSInfo) (*Paylo
 	id := uuid.New().String()
 	tsMs := int64(meta.Timestamp) / int64(time.Millisecond)
 
-	userFrames := userSpaceFrames(trace.Frames)
 	lang := detectLanguage(trace.Frames)
 	service := resolveService(meta)
 	env := envVar(meta.EnvVars, "DD_ENV")
 	version := envVar(meta.EnvVars, "DD_VERSION")
-	fp := fingerprint(userFrames)
+	fp := fingerprint(trace.Frames)
 
 	return &Payload{
 		Timestamp: tsMs,
@@ -86,7 +85,7 @@ func Build(trace *libpf.Trace, meta *samples.TraceEventMeta, sys OSInfo) (*Paylo
 		Error: ErrorObject{
 			Type:        OOMSigNoReadable,
 			Message:     "Process killed by the OOM killer",
-			Stack:       buildStack(userFrames),
+			Stack:       buildStack(trace.Frames),
 			IsCrash:     true,
 			Fingerprint: fp,
 			SourceType:  SourceType,
@@ -144,14 +143,6 @@ func buildDDTags(id, service, env, version, lang, fp string) string {
 		tags = append(tags, "fingerprint:"+fp)
 	}
 	return strings.Join(tags, ",")
-}
-
-func userSpaceFrames(frames libpf.Frames) libpf.Frames {
-	start := 0
-	for start < len(frames) && frames[start].Value().Type == libpf.KernelFrame {
-		start++
-	}
-	return frames[start:]
 }
 
 func buildStack(frames libpf.Frames) *StackTrace {

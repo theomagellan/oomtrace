@@ -216,21 +216,34 @@ func TestBuild_Stack(t *testing.T) {
 	if st.Format != StackFormat {
 		t.Errorf("stack.format = %q, want %q", st.Format, StackFormat)
 	}
-	if len(st.Frames) != 2 {
-		t.Errorf("expected 2 userspace frames, got %d", len(st.Frames))
+	if len(st.Frames) != 3 {
+		t.Errorf("expected 3 frames (1 kernel + 2 native), got %d", len(st.Frames))
 	}
-	if st.Frames[0].Function != "malloc" {
-		t.Errorf("frame[0].function = %q, want %q", st.Frames[0].Function, "malloc")
+	if st.Frames[0].Function != "get_signal" {
+		t.Errorf("frame[0].function = %q, want %q", st.Frames[0].Function, "get_signal")
 	}
-	if st.Frames[0].File != "malloc.c" {
-		t.Errorf("frame[0].file = %q", st.Frames[0].File)
+	if st.Frames[1].Function != "malloc" {
+		t.Errorf("frame[1].function = %q, want %q", st.Frames[1].Function, "malloc")
 	}
-	if st.Frames[0].Line != 42 {
-		t.Errorf("frame[0].line = %d, want 42", st.Frames[0].Line)
+	if st.Frames[1].File != "malloc.c" {
+		t.Errorf("frame[1].file = %q", st.Frames[1].File)
+	}
+	if st.Frames[1].Line != 42 {
+		t.Errorf("frame[1].line = %d, want 42", st.Frames[1].Line)
 	}
 }
 
 func TestBuild_EmptyStack(t *testing.T) {
+	p, err := Build(&libpf.Trace{}, makeMeta("svc"), fixedOSInfo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Error.Stack != nil {
+		t.Error("error.stack should be nil for an empty trace")
+	}
+}
+
+func TestBuild_KernelOnlyStack(t *testing.T) {
 	var kernelOnly libpf.Frames
 	kernelOnly.Append(&libpf.Frame{Type: libpf.KernelFrame, FunctionName: libpf.Intern("get_signal")})
 
@@ -238,8 +251,14 @@ func TestBuild_EmptyStack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Error.Stack != nil {
-		t.Error("error.stack should be nil when no userspace frames remain")
+	if p.Error.Stack == nil {
+		t.Fatal("error.stack should be present when kernel frames exist")
+	}
+	if len(p.Error.Stack.Frames) != 1 {
+		t.Errorf("expected 1 kernel frame, got %d", len(p.Error.Stack.Frames))
+	}
+	if p.Error.Stack.Frames[0].Function != "get_signal" {
+		t.Errorf("frame[0].function = %q, want %q", p.Error.Stack.Frames[0].Function, "get_signal")
 	}
 }
 
