@@ -132,6 +132,7 @@ func buildDDTags(id, service, env, version, lang, fp string) string {
 		"si_signo_human_readable:" + OOMSigNoReadable,
 		fmt.Sprintf("si_code:%d", OOMSICode),
 		"si_code_human_readable:" + OOMSICodeReadable,
+		"from_ebpf:yes",
 	}
 	if env != "" {
 		tags = append(tags, "env:"+env)
@@ -175,6 +176,7 @@ func toStackFrame(f libpf.Frame) StackFrame {
 		file := m.File.Value()
 		sf.Path = file.FileName.String()
 		sf.FileType = "ELF"
+		// RFC makes no mention of HTL, how do they handle 'redacted' gobuildIDs?
 		switch {
 		case file.GnuBuildID != "":
 			sf.BuildID = file.GnuBuildID
