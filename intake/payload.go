@@ -162,10 +162,6 @@ func buildDDTags(id, service, env, version, lang, fp string, sig *SigInfo) strin
 		"incomplete:false",
 		"is_crash:true",
 		"uuid:" + id,
-		fmt.Sprintf("si_signo:%d", OOMSigNo),
-		"si_signo_human_readable:" + OOMSigNoReadable,
-		fmt.Sprintf("si_code:%d", OOMSICode),
-		"si_code_human_readable:" + OOMSICodeReadable,
 		"from_ebpf:yes",
 	}
 	if env != "" {

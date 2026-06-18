@@ -166,7 +166,6 @@ func TestBuild_DDTags_RequiredKeys(t *testing.T) {
 	for _, k := range []string{
 		"service", "language_name", "data_schema_version",
 		"incomplete", "is_crash", "uuid",
-		"si_signo", "si_signo_human_readable", "si_code", "si_code_human_readable",
 	} {
 		requireTagKey(t, p.DDTags, k)
 	}
@@ -175,7 +174,6 @@ func TestBuild_DDTags_RequiredKeys(t *testing.T) {
 	requireTag(t, p.DDTags, "is_crash", "true")
 	requireTag(t, p.DDTags, "incomplete", "false")
 	requireTag(t, p.DDTags, "data_schema_version", DataSchemaVersion)
-	requireTag(t, p.DDTags, "si_signo_human_readable", "SIGKILL")
 }
 
 func TestBuild_ServiceFallbacks(t *testing.T) {
