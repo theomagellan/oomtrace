@@ -29,7 +29,7 @@ func samplePayload(t *testing.T) *intake.Payload {
 	meta := &samples.TraceEventMeta{
 		Timestamp:      libpf.UnixTime64(time.Now().UnixNano()),
 		APMServiceName: "testsvc",
-		Origin:         support.TraceOriginOOM,
+		Origin:         support.TraceOriginCrash,
 	}
 	sys := intake.OSInfo{
 		Architecture: "amd64",

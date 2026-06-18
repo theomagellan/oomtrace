@@ -16,12 +16,49 @@ const (
 	StackFormat       = "Datadog Crashtracker 1.0"
 	SourceType        = "Crashtracking"
 	DDSource          = "crashtracker"
-
-	OOMSigNo           = 9
-	OOMSigNoReadable   = "SIGKILL"
-	OOMSICode          = 128 // SI_KERNEL: OOM kills always originate from kernel context
-	OOMSICodeReadable  = "SI_KERNEL"
 )
+
+// sigName maps signal numbers to their POSIX names.
+var sigName = map[int]string{
+	4:  "SIGILL",
+	6:  "SIGABRT",
+	7:  "SIGBUS",
+	8:  "SIGFPE",
+	9:  "SIGKILL",
+	11: "SIGSEGV",
+}
+
+// sigInfo returns the SigInfo for a given signal number.
+// OOM kills (SIGKILL) always have SI_KERNEL as the si_code.
+// For other signals we don't have si_code from the eBPF side yet, so we use 0.
+func sigInfoFor(signo int) *SigInfo {
+	name, ok := sigName[signo]
+	if !ok {
+		name = fmt.Sprintf("SIG%d", signo)
+	}
+	si := &SigInfo{
+		SISigno:              signo,
+		SISignoHumanReadable: name,
+	}
+	if signo == 9 { // SIGKILL from OOM killer is always SI_KERNEL
+		si.SICode = 128
+		si.SICodeHumanReadable = "SI_KERNEL"
+	}
+	return si
+}
+
+func crashMessage(signo int) string {
+	switch signo {
+	case 9:
+		return "Process killed by the OOM killer"
+	default:
+		name := sigName[signo]
+		if name == "" {
+			name = fmt.Sprintf("signal %d", signo)
+		}
+		return "Process terminated with " + name
+	}
+}
 
 // Payload is the RFC 0013 top-level structure sent to /api/v2/errorsintake.
 type Payload struct {
@@ -67,36 +104,33 @@ type SigInfo struct {
 	SISignoHumanReadable string `json:"si_signo_human_readable"`
 }
 
-// Build constructs an RFC 0013 payload from a captured OOM trace.
+// Build constructs an RFC 0013 payload from a captured crash trace.
 func Build(trace *libpf.Trace, meta *samples.TraceEventMeta, sys OSInfo) (*Payload, error) {
 	id := uuid.New().String()
 	tsMs := int64(meta.Timestamp) / int64(time.Millisecond)
+	signo := int(meta.Value)
 
 	lang := detectLanguage(trace.Frames)
 	service := resolveService(meta)
 	env := envVar(meta.EnvVars, "DD_ENV")
 	version := envVar(meta.EnvVars, "DD_VERSION")
 	fp := fingerprint(trace.Frames)
+	sig := sigInfoFor(signo)
 
 	return &Payload{
 		Timestamp: tsMs,
 		DDSource:  DDSource,
-		DDTags:    buildDDTags(id, service, env, version, lang, fp),
+		DDTags:    buildDDTags(id, service, env, version, lang, fp, sig),
 		Error: ErrorObject{
-			Type:        OOMSigNoReadable,
-			Message:     "Process killed by the OOM killer",
+			Type:        sig.SISignoHumanReadable,
+			Message:     crashMessage(signo),
 			Stack:       buildStack(trace.Frames),
 			IsCrash:     true,
 			Fingerprint: fp,
 			SourceType:  SourceType,
 		},
-		OSInfo: sys,
-		SigInfo: &SigInfo{
-			SISigno:              OOMSigNo,
-			SISignoHumanReadable: OOMSigNoReadable,
-			SICode:               OOMSICode,
-			SICodeHumanReadable:  OOMSICodeReadable,
-		},
+		OSInfo:  sys,
+		SigInfo: sig,
 	}, nil
 }
 
@@ -120,7 +154,7 @@ func envVar(vars map[libpf.String]libpf.String, key string) string {
 	return ""
 }
 
-func buildDDTags(id, service, env, version, lang, fp string) string {
+func buildDDTags(id, service, env, version, lang, fp string, sig *SigInfo) string {
 	tags := []string{
 		"service:" + service,
 		"language_name:" + lang,

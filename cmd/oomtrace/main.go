@@ -67,7 +67,7 @@ func run() error {
 		SamplesPerSecond:       10,
 		KernelVersionCheck:     true,
 		ProbabilisticThreshold: tracer.ProbabilisticThresholdMax,
-		OOMTracing:             true,
+		CrashTracing:           true,
 		IncludeEnvVars: libpf.Set[string]{
 			"DD_SERVICE": {},
 			"DD_ENV":     {},
@@ -97,8 +97,8 @@ func run() error {
 		return fmt.Errorf("failed to attach sched monitor: %w", err)
 	}
 
-	if err := trc.StartOOMTracing(); err != nil {
-		return fmt.Errorf("failed to start OOM tracing: %w", err)
+	if err := trc.StartCrashTracing(); err != nil {
+		return fmt.Errorf("failed to start crash tracing: %w", err)
 	}
 
 	traceCh := make(chan *libpf.EbpfTrace)

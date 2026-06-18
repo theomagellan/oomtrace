@@ -39,7 +39,7 @@ func (r *oomReporter) Start(ctx context.Context) error {
 func (r *oomReporter) Stop() {}
 
 func (r *oomReporter) ReportTraceEvent(trace *libpf.Trace, meta *samples.TraceEventMeta) error {
-	if meta.Origin != support.TraceOriginOOM {
+	if meta.Origin != support.TraceOriginCrash {
 		return nil
 	}
 	select {

@@ -24,7 +24,8 @@ func makeMeta(service string) *samples.TraceEventMeta {
 		Comm:           libpf.Intern("victim"),
 		PID:            libpf.PID(1234),
 		APMServiceName: service,
-		Origin:         support.TraceOriginOOM,
+		Origin:         support.TraceOriginCrash,
+		Value:          9, // SIGKILL
 	}
 }
 
@@ -136,12 +137,12 @@ func TestBuild_RequiredFields(t *testing.T) {
 	if p.SigInfo == nil {
 		t.Fatal("sig_info must be present for OOM events")
 	}
-	if p.SigInfo.SISigno != OOMSigNo {
-		t.Errorf("sig_info.si_signo = %d, want %d", p.SigInfo.SISigno, OOMSigNo)
+	if p.SigInfo.SISigno != 9 {
+		t.Errorf("sig_info.si_signo = %d, want %d", p.SigInfo.SISigno, 9)
 	}
-	if p.SigInfo.SISignoHumanReadable != OOMSigNoReadable {
+	if p.SigInfo.SISignoHumanReadable != "SIGKILL" {
 		t.Errorf("sig_info.si_signo_human_readable = %q, want %q",
-			p.SigInfo.SISignoHumanReadable, OOMSigNoReadable)
+			p.SigInfo.SISignoHumanReadable, "SIGKILL")
 	}
 }
 
@@ -174,7 +175,7 @@ func TestBuild_DDTags_RequiredKeys(t *testing.T) {
 	requireTag(t, p.DDTags, "is_crash", "true")
 	requireTag(t, p.DDTags, "incomplete", "false")
 	requireTag(t, p.DDTags, "data_schema_version", DataSchemaVersion)
-	requireTag(t, p.DDTags, "si_signo_human_readable", OOMSigNoReadable)
+	requireTag(t, p.DDTags, "si_signo_human_readable", "SIGKILL")
 }
 
 func TestBuild_ServiceFallbacks(t *testing.T) {
