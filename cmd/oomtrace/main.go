@@ -64,7 +64,7 @@ func run() error {
 		TraceReporter:          rep,
 		Intervals:              intervals,
 		IncludeTracers:         includeTracers,
-		SamplesPerSecond:       10,
+		SamplesPerSecond:       1,
 		KernelVersionCheck:     true,
 		ProbabilisticThreshold: tracer.ProbabilisticThresholdMax,
 		CrashTracing:           true,
